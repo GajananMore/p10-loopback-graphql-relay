@@ -1,0 +1,20 @@
+{
+  "loopback-component-explorer": {
+    "mountPath": "/explorer"
+  },
+  "../index": {
+    "path": "/graphql",
+    "graphiqlPath": "/graphiql",
+    "viewer": {
+      "AccessTokenModel": "CustomAccessToken",
+      "relation": "user",
+      "UserModel": "Account"
+    },
+    "subscriptionServer": {
+      "disable": false,
+      "port": 5000,
+      "options": {},
+      "socketOptions": {}
+    }
+  }
+}
