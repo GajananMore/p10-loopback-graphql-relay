@@ -46,7 +46,7 @@ module.exports = function(app, subscriptionManager, opts) {
     }, options),
     Object.assign({}, {
       server: websocketServer,
-      path: '/graphql'
+      path: '/'
     }, socketOptions)
   );
 
