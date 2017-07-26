@@ -32,14 +32,14 @@ class PubSub {
     const { create, update, remove: rmv, options: opts } = options;
 
     // Login
-    // return Promise.resolve().then(() => new Promise((resolve, reject) => {
-    //   model.checkAccess(context.accessToken, null, model.createChangeStream, null, (err, allowed) => {
-    //     if (err) {
-    //       reject(err);
-    //     }
-    //     resolve(allowed);
-    //   });
-    // })).then((result) => {
+    return Promise.resolve().then(() => new Promise((resolve, reject) => {
+      model.checkAccess(options.context.accessToken, null, model.sharedClass.methods().filter(model=>model["name"]=="createChangeStream")[0], null, (err, allowed) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(allowed);
+      });
+    })).then((result) => {
 
       // Stream
     model.createChangeStream(opts, (err, stream) => {
@@ -79,7 +79,7 @@ class PubSub {
     });
 
     return Promise.resolve(subId);
-    // });
+     });
   }
 
   unsubscribe(subId) {
