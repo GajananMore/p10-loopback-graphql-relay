@@ -41,6 +41,9 @@ class PubSub {
       });
     })).then((result) => {
 
+    if(!result){
+      Promise.reject('Access Denied');
+    }
       // Stream
     model.createChangeStream(opts, (err, stream) => {
       // changes.pipe(es.stringify()).pipe(process.stdout);
