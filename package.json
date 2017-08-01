@@ -47,7 +47,6 @@
     "event-stream": "^3.3.4",
     "graphql": "^0.9.5",
     "graphql-date": "^1.0.2",
-    "graphql-redis-subscriptions": "^1.2.0",
     "graphql-relay": "^0.5.1",
     "graphql-server-express": "^0.7.2",
     "graphql-type-json": "^0.1.4",
