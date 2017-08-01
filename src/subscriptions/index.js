@@ -42,12 +42,12 @@ const SubscriptionServer = require('./server');
 
 module.exports = function startSubscriptionServer(app, schema, options) {
   const models = app.models();
-  const pubsub = new RedisPubSub({connection: {
-    host: options.redis.host,
-    port: options.redis.port
-  }});
+  // const pubsub = new RedisPubSub({connection: {
+  //   host: options.redis.host,
+  //   port: options.redis.port
+  // }});
   // const pubsub = (process.env.NODE_ENV.toLocaleLowerCase() === 'prod'||process.env.NODE_ENV.toLocaleLowerCase() === 'production')? new RedisPubSub():new PubSub();
-  const subscriptionManager = SubscriptionManager(models, schema, pubsub);
+  const subscriptionManager = SubscriptionManager(models, schema, new PubSub());
   SubscriptionServer(app, subscriptionManager, options);
 
   // test(subscriptionManager);
