@@ -1,6 +1,6 @@
 const PubSub = require('./pubsub');
 const SubscriptionManager = require('./subscriptionManager');
-import { RedisPubSub } from 'graphql-redis-subscriptions';
+const RedisPubSub = require('graphql-redis-subscriptions').RedisPubSub;
 const SubscriptionServer = require('./server');
 
 // start a subscription (for testing)
