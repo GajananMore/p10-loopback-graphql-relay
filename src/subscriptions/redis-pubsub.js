@@ -74,7 +74,7 @@ var RedisPubSub = (function () {
                                     if (create) {
                                         const payload = {
                                         subscriptionId: id,
-                                        event: create,
+                                        event: "create",
                                         object: data 
                                         }
                                     _this.publish(triggerName, payload);
@@ -87,7 +87,7 @@ var RedisPubSub = (function () {
 
                                         const payload = {
                                             subscriptionId: id,
-                                            event: update,
+                                            event: "update",
                                             object: { data: obj }
                                         };
 
@@ -105,7 +105,7 @@ var RedisPubSub = (function () {
                                     if (rmv) {
                                     const payload = {
                                         subscriptionId: id,
-                                        event: rmv,
+                                        event: "remove",
                                         object: data 
                                         }
                                     _this.publish(triggerName, payload);
