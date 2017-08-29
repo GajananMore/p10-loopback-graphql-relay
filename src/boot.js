@@ -30,6 +30,6 @@ module.exports = function(app, options) {
     startSubscriptionServer(app, schema, options);
   }
   catch(err){
-    console.log('Error in starting graphql endpoint and subscription server. Error details',err);
+    console.log('Error in starting graphql endpoint and subscription server. Error details: ',err);
   }
 };
