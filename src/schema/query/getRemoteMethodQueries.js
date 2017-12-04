@@ -42,7 +42,7 @@ module.exports = function getRemoteMethodQueries(model) {
               params.push(args[name]);
             });
           var modelId = args && args.id;
-         return checkAccess({accessToken:context.req.accessToken ,model: model, method: method,id:modelId})
+         return checkAccess({req:context.req,model: model, method: method,id:modelId})
             .then(() =>{
               const wrap = promisify(model[method.name]);
 
