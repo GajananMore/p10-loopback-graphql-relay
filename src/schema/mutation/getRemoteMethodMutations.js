@@ -48,6 +48,10 @@ module.exports = function getRemoteMethodMutations(model) {
           },
             mutateAndGetPayload: (args,context) => {
             const params = [];
+            
+            if(args.options){
+              args.options = Object.assign({},args.options)
+            }
 
             _.forEach(acceptingParams, (param, name) => {
               params.push(args[name]);

@@ -38,6 +38,10 @@ module.exports = function getRemoteMethodQueries(model) {
           resolve: (__, args, context, info) => {
             const params = [];
 
+            if(args.options){
+              args.options = Object.assign({},args.options)
+            }
+            
             _.forEach(acceptingParams, (param, name) => {
               params.push(args[name]);
             });
