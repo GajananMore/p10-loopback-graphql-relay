@@ -1,21 +1,24 @@
-'use strict';
+"use strict";
 
-const _ = require('lodash');
+const _ = require("lodash");
 
-const promisify = require('promisify-node');
+const promisify = require("promisify-node");
 const checkAccess = require("../ACLs");
 
-const utils = require('../utils');
-const { connectionFromPromisedArray } = require('graphql-relay');
-const allowedVerbs = ['get', 'head'];
+const utils = require("../utils");
+const { connectionFromPromisedArray } = require("graphql-relay");
+const { overrideRemoteOptions } = require("../overrideRemoteOptions");
+const allowedVerbs = ["get", "head"];
 
 module.exports = function getRemoteMethodQueries(model) {
   const hooks = {};
 
   if (model.sharedClass && model.sharedClass.methods) {
-    model.sharedClass.methods().forEach((method) => {
-      if (method.name.indexOf('Stream') === -1 && method.name.indexOf('invoke') === -1) {
-
+    model.sharedClass.methods().forEach(method => {
+      if (
+        method.name.indexOf("Stream") === -1 &&
+        method.name.indexOf("invoke") === -1
+      ) {
         if (!utils.isRemoteMethodAllowed(method, allowedVerbs)) {
           return;
         }
@@ -26,7 +29,10 @@ module.exports = function getRemoteMethodQueries(model) {
         }
 
         const typeObj = utils.getRemoteMethodOutput(method);
-        const acceptingParams = utils.getRemoteMethodInput(method, typeObj.list);
+        const acceptingParams = utils.getRemoteMethodInput(
+          method,
+          typeObj.list
+        );
         const hookName = utils.getRemoteMethodQueryName(model, method);
 
         hooks[hookName] = {
@@ -37,28 +43,39 @@ module.exports = function getRemoteMethodQueries(model) {
           type: typeObj.type,
           resolve: (__, args, context, info) => {
             const params = [];
+            const contextOptions = overrideRemoteOptions(context);
+            args.options = Object.assign(contextOptions, args.options || {});
 
-            if(args.options){
-              args.options = Object.assign({},args.options)
+            if (args.options) {
+              args.options = Object.assign({}, args.options);
             }
-            
+
             _.forEach(acceptingParams, (param, name) => {
               params.push(args[name]);
             });
-          var modelId = args && args.id;
-         return checkAccess({req:context.req,model: model, method: method,id:modelId})
-            .then(() =>{
-              const wrap = promisify(model[method.name]);
-
-              if (typeObj.list) {
-                return connectionFromPromisedArray(wrap.apply(model, params), args, model);
-              }
-
-              return wrap.apply(model, params);
+            var modelId = args && args.id;
+            return checkAccess({
+              req: context.req,
+              model: model,
+              method: method,
+              id: modelId
             })
-            .catch((err)=>{               
-                 throw  err;
-            }); 
+              .then(() => {
+                const wrap = promisify(model[method.name]);
+
+                if (typeObj.list) {
+                  return connectionFromPromisedArray(
+                    wrap.apply(model, params),
+                    args,
+                    model
+                  );
+                }
+
+                return wrap.apply(model, params);
+              })
+              .catch(err => {
+                throw err;
+              });
           }
         };
       }
