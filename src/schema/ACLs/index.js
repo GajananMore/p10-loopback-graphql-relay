@@ -1,7 +1,7 @@
-const AWS_ACCESSKEY_REGEX = "AWS4-HMAC-SHA256 Credential=";
-const OAUTH_ACCESSKEY_REGEX = "Bearers";
-const matchAwsToken = str => str.match(/(`${AWS_ACCESSKEY_REGEX}`)/g);
-const matchOAuthToken = str => str.match(/(`${OAUTH_ACCESSKEY_REGEX}`)/g);
+const AWS_ACCESSKEY_REGEX = /(AWS4\-HMAC\-SHA256 Credential\=)/g;
+const OAUTH_ACCESSKEY_REGEX = /(Bearer\s)/g;
+const matchAwsToken = str => str.match(AWS_ACCESSKEY_REGEX);
+const matchOAuthToken = str => str.match(OAUTH_ACCESSKEY_REGEX);
 
 //calls the check the ACLS on the model and return the access permission on method.
 function checkAccess({ req, id, model, method }) {
