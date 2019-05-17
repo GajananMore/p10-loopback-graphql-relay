@@ -1,66 +1,71 @@
-let _=require('lodash');
- //calls the check the ACLS on the model and return the access permission on method.
- function checkAccess({req, id, model, method}) {
-    return getAccessToken(req,model)
-    .then(token=>{
-        return checkACL(token,id,model,method);
-    })
-    .catch(err=>{
-        return Promise.reject(err);
-    })
-  }
+const AWS_ACCESSKEY_REGEX = "AWS4-HMAC-SHA256 Credential=";
+const OAUTH_ACCESSKEY_REGEX = "Bearer\s";
+const matchAwsToken = str => str.match(/(`${AWS_ACCESSKEY_REGEX}`)/g);
+const matchOAuthToken = str => str.match(/(`${OAUTH_ACCESSKEY_REGEX}`)/g);
 
-  function getAccessToken(req,model){
-    try{
-    if(req.accessToken){
-        return Promise.resolve(req.accessToken);
-    }     
-    let token = getTokenFromReq(req);
-     return model.app.models.AccessToken.findById(token);
-    }
-    catch(err){
-        return Promise.reject(err);
-    }
-  }
-
-
-  function getTokenFromReq(req){
-    if(req.headers && req.headers.authorization)
-    {
-      return req.headers.authorization
-    }
-    else if(req.params && req.query.access_token){
-        return req.query.access_token;
-    }
-    else{
-       throw getAuthorizationError();
-    }
-  }
-
-  function checkACL(accessToken,id,model,method)
-  {
-    if(_.isEmpty(accessToken))
-    {
-        return Promise.reject(getAuthorizationError());
-    }
-    return new Promise((resolve, reject) => {
-        var ACL=model.app.models.ACL;      
-        model.checkAccess(accessToken,id,method,null,
-        ((err,allowed)=>{
-            if (err)
-                reject(err);
-            else if (allowed)
-                resolve(allowed);
-            else
-                reject(`Access denied`);
-        }));
+//calls the check the ACLS on the model and return the access permission on method.
+function checkAccess({ req, id, model, method }) {
+  return getAccessToken(req, model)
+    .then(token => {
+      return checkACL(token, id, model, method);
     });
-  }
+}
 
-  function getAuthorizationError(){
-    let authorizationError=new Error('Authorization required');
-    authorizationError.statusCode=401;
-    authorizationError.status=401;
-    return authorizationError;
+function verifyTokenFormat(verifyFunction, str) {
+  const result = verifyFunction(str);
+  return result && result.length === 1;
+}
+
+function getAccessToken(req, model) {
+  const token = getTokenFromReq(req);
+  if (req.accessToken) {
+    return Promise.resolve(req.accessToken);
   }
-  module.exports=checkAccess;
+  if (token && typeof token === "string") {
+    return model.app.models.AccessToken.findById(token);
+  }
+  // if getTokenFromReq returns false, ie no token sent in request, resole with empty string.
+  return Promise.resolve("");
+}
+
+function getTokenFromReq(req) {
+  if (req.headers && req.headers.authorization) {
+    return req.headers.authorization;
+  }
+  if (req.params && req.query.access_token) {
+    return req.query.access_token;
+  }
+  // no token sent in req.
+  return false;
+}
+
+function checkACL(accessToken, id, model, method) {
+  let isValidTokenFormat = false;
+  if (accessToken === "") {
+    isValidTokenFormat = true;
+  } else if (accessToken && accessToken.id) {
+    const isAuthTokenCorrect = verifyTokenFormat(matchOAuthToken, accessToken.id);
+    const isAwsTokenCorrect = verifyTokenFormat(matchAwsToken, accessToken.id);
+    isValidTokenFormat = isAuthTokenCorrect || isAwsTokenCorrect;
+  }
+  if (isValidTokenFormat || isValidTokenFormat === null) { // isValidTokenFormat null is for case $unauthorized, there's no token so it won't verify and match.
+    return modelCheckAccess({ accessToken, id, method, model });
+  }
+  throw new Error("Invalid token format");
+}
+
+function modelCheckAccess({ accessToken, id, method, model }) {
+  return new Promise((resolve, reject) => {
+    return model.checkAccess(accessToken, id, method, null, (err, allowed) => {
+      if (err) {
+        return reject(err);
+      }
+      if (allowed) {
+        return resolve(allowed);
+      }
+      return reject(`Access denied`);
+    });
+  });
+}
+
+module.exports = checkAccess;
