@@ -1,14 +1,13 @@
-const AWS_ACCESSKEY_REGEX = "AWS4-HMAC-SHA256 Credential=";
-const OAUTH_ACCESSKEY_REGEX = "Bearer\s";
-const matchAwsToken = str => str.match(/(`${AWS_ACCESSKEY_REGEX}`)/g);
-const matchOAuthToken = str => str.match(/(`${OAUTH_ACCESSKEY_REGEX}`)/g);
+const AWS_ACCESSKEY_REGEX = /(AWS4\-HMAC\-SHA256 Credential\=)/g;
+const OAUTH_ACCESSKEY_REGEX = /(Bearer\s)/g;
+const matchAwsToken = str => str.match(AWS_ACCESSKEY_REGEX);
+const matchOAuthToken = str => str.match(OAUTH_ACCESSKEY_REGEX);
 
 //calls the check the ACLS on the model and return the access permission on method.
 function checkAccess({ req, id, model, method }) {
-  return getAccessToken(req, model)
-    .then(token => {
-      return checkACL(token, id, model, method);
-    });
+  return getAccessToken(req, model).then(token => {
+    return checkACL(token, id, model, method, req);
+  });
 }
 
 function verifyTokenFormat(verifyFunction, str) {
@@ -39,32 +38,42 @@ function getTokenFromReq(req) {
   return false;
 }
 
-function checkACL(accessToken, id, model, method) {
+function checkACL(accessToken, id, model, method, req) {
   let isValidTokenFormat = false;
   if (accessToken === "") {
     isValidTokenFormat = true;
   } else if (accessToken && accessToken.id) {
-    const isAuthTokenCorrect = verifyTokenFormat(matchOAuthToken, accessToken.id);
+    const isAuthTokenCorrect = verifyTokenFormat(
+      matchOAuthToken,
+      accessToken.id
+    );
     const isAwsTokenCorrect = verifyTokenFormat(matchAwsToken, accessToken.id);
     isValidTokenFormat = isAuthTokenCorrect || isAwsTokenCorrect;
   }
-  if (isValidTokenFormat || isValidTokenFormat === null) { // isValidTokenFormat null is for case $unauthorized, there's no token so it won't verify and match.
-    return modelCheckAccess({ accessToken, id, method, model });
+  if (isValidTokenFormat || isValidTokenFormat === null) {
+    // isValidTokenFormat null is for case $unauthorized, there's no token so it won't verify and match.
+    return modelCheckAccess({ accessToken, id, method, model, req });
   }
   throw new Error("Invalid token format");
 }
 
-function modelCheckAccess({ accessToken, id, method, model }) {
+function modelCheckAccess({ accessToken, id, method, model, req }) {
   return new Promise((resolve, reject) => {
-    return model.checkAccess(accessToken, id, method, null, (err, allowed) => {
-      if (err) {
-        return reject(err);
+    return model.checkAccess(
+      accessToken,
+      id,
+      method,
+      { req },
+      (err, allowed) => {
+        if (err) {
+          return reject(err);
+        }
+        if (allowed) {
+          return resolve(allowed);
+        }
+        return reject(`Access denied`);
       }
-      if (allowed) {
-        return resolve(allowed);
-      }
-      return reject(`Access denied`);
-    });
+    );
   });
 }
 
