@@ -128,7 +128,7 @@ function findAllViaThrough(rel, obj, args, context) {
 
 function findRelatedMany(rel, obj, args, context) {
   if (_.isArray(obj[rel.keyFrom])) {
-    return [];
+    return Promise.resolve([]);
   }
 
   if (rel.modelThrough) {
